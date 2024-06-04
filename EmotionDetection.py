@@ -75,7 +75,7 @@ def train_model(X_train, Y_train, X_test, Y_test):
         )
         datagen.fit(X_train)
 
-        history = model.fit(datagen.flow(X_train, Y_train, batch_size=64), epochs=50, validation_data=(X_test, Y_test))
+        history = model.fit(datagen.flow(X_train, Y_train, batch_size=32), epochs=25, validation_data=(X_test, Y_test))
 
         with open('training_history.pkl', 'wb') as f:
             pickle.dump(history.history, f)
