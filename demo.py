@@ -14,7 +14,7 @@ def load_emotion_model():
 
 model, emotion_labels = load_emotion_model()
 
-# Function to predict emotion from an uploaded image
+# Function to predict emotion from an image
 def predict_emotion(image):
     img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     img = cv2.resize(img, (48, 48))
@@ -30,16 +30,31 @@ def predict_emotion(image):
 
 # Streamlit UI
 st.title("Emotion Detection")
-st.write("Upload an image, and the model will predict the emotion expressed.")
+st.write("Upload an image or capture one using your device camera to detect the emotion expressed.")
 
-uploaded_file = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
+# Provide options to upload or capture an image
+option = st.radio("Choose an input method:", ["Upload an Image", "Use Device Camera"])
 
-if uploaded_file:
-    # Display uploaded image
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-    st.image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), caption="Uploaded Image", use_column_width=True)
+image = None
 
-    # Predict emotion
+if option == "Upload an Image":
+    uploaded_file = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
+    if uploaded_file:
+        # Read and decode the uploaded image
+        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+elif option == "Use Device Camera":
+    captured_file = st.camera_input("Take a picture")
+    if captured_file:
+        # Read and decode the captured image
+        file_bytes = np.asarray(bytearray(captured_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+if image is not None:
+    # Display the input image
+    st.image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), caption="Input Image", use_container_width=True)
+
+    # Predict the emotion
     emotion, confidence = predict_emotion(image)
     st.write(f"**Emotion Detected:** {emotion}")
