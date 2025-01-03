@@ -4,57 +4,54 @@ import cv2
 from keras.models import load_model
 
 
-# Load model and labels
+# Load the pre-trained model
 @st.cache_resource
-def load_emotion_model():
-    model = load_model("emotion_detection_model.h5")
-    labels = ['angry', 'fearful', 'happy', 'neutral', 'sad', 'surprised']
-    return model, labels
+def load_trained_model():
+    return load_model('age_detection_model.h5')
 
 
-model, emotion_labels = load_emotion_model()
-
-# Function to predict emotion from an image
-def predict_emotion(image):
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    img = cv2.resize(img, (48, 48))
-    img = img / 255.0  # Normalize
-    img = np.expand_dims(img, axis=-1)  # Add channel dimension
-    img = np.expand_dims(img, axis=0)   # Add batch dimension
-    prediction = model.predict(img)
-    emotion_index = np.argmax(prediction)
-    emotion = emotion_labels[emotion_index]
-    confidence = prediction[0][emotion_index]
-    return emotion, confidence
+# Preprocess the uploaded or captured image
+def preprocess_image(image_bytes):
+    img = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+    img = cv2.resize(img, (128, 128))  # Resize to match the model input size
+    img = img / 255.0  # Normalize pixel values
+    img = np.expand_dims(img, axis=0)  # Add batch dimension
+    return img
 
 
-# Streamlit UI
-st.title("Emotion Detection")
-st.write("Upload an image or capture one using your device camera to detect the emotion expressed.")
+def main():
+    st.title("Age Detection Demo")
+    st.write("Upload a face image or capture one using your camera to predict the age.")
 
-# Provide options to upload or capture an image
-option = st.radio("Choose an input method:", ["Upload an Image", "Use Device Camera"])
+    # Load the trained model
+    model = load_trained_model()
 
-image = None
+    # Option to choose between uploading an image or capturing one
+    option = st.radio("Choose an input method:", ["Upload an Image", "Use Device Camera"])
 
-if option == "Upload an Image":
-    uploaded_file = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
-    if uploaded_file:
-        # Read and decode the uploaded image
-        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    image_bytes = None
 
-elif option == "Use Device Camera":
-    captured_file = st.camera_input("Take a picture")
-    if captured_file:
-        # Read and decode the captured image
-        file_bytes = np.asarray(bytearray(captured_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    if option == "Upload an Image":
+        uploaded_image = st.file_uploader("Upload an image...", type=['jpg', 'png', 'jpeg'])
+        if uploaded_image is not None:
+            image_bytes = uploaded_image.read()
 
-if image is not None:
-    # Display the input image
-    st.image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), caption="Input Image", use_container_width=True)
+    elif option == "Use Device Camera":
+        captured_image = st.camera_input("Take a picture")
+        if captured_image is not None:
+            image_bytes = captured_image.read()
 
-    # Predict the emotion
-    emotion, confidence = predict_emotion(image)
-    st.write(f"**Emotion Detected:** {emotion}")
+    if image_bytes:
+        # Display the input image
+        st.image(image_bytes, caption="Input Image", use_container_width=True)
+
+        # Preprocess the image
+        img = preprocess_image(image_bytes)
+
+        # Predict the age
+        predicted_age = model.predict(img)
+        st.subheader(f"Predicted Age: {int(predicted_age[0][0])}")
+
+
+if __name__ == '__main__':
+    main()
