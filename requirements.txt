@@ -3,6 +3,6 @@ numpy
 opencv-python-headless
 tensorflow
 keras
+Pillow
 matplotlib
 scikit-learn
-pillow
